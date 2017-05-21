@@ -8,7 +8,7 @@ from base64 import decodestring
 from AccessControl import ClassSecurityInfo
 from Products.PrintingMailHost import LOG, FIXED_ADDRESS
 from Products.MailHost.MailHost import MailBase
-from StringIO import StringIO
+from io import StringIO
 
 PATCH_PREFIX = '_monkey_'
 
@@ -24,7 +24,7 @@ def monkeyPatch(originalClass, patchingClass):
     * Safes original attributes as _monkey_name
     * Overwrites/adds these attributes in original class
     """
-    for name, newAttr in patchingClass.__dict__.items():
+    for name, newAttr in list(patchingClass.__dict__.items()):
         # don't overwrite doc or module informations
         if name not in ('__doc__', '__module__'):
             # safe the old attribute as __monkey_name if exists
@@ -53,10 +53,10 @@ class PrintingMailHost:
             messageText = email.Parser.Parser().parsestr(messageText)
         base64_note = ""
         out = StringIO()
-        print >> out, ""
-        print >> out, " ---- sending mail ---- "
-        print >> out, "From:", mfrom
-        print >> out, "To:", mto
+        print("", file=out)
+        print(" ---- sending mail ---- ", file=out)
+        print("From:", mfrom, file=out)
+        print("To:", mto, file=out)
         if messageText.get('Content-Transfer-Encoding') == 'base64':
             base64_note = "NOTE: The email payload was originally base64 " \
                           "encoded.  It was decoded for debug purposes."
@@ -73,12 +73,12 @@ class PrintingMailHost:
             else:
                 messageText.set_payload(decodestring(body))
 
-        print >> out, messageText
-        print >> out, " ---- done ---- "
-        print >> out, ""
+        print(messageText, file=out)
+        print(" ---- done ---- ", file=out)
+        print("", file=out)
         if base64_note:
-            print >> out, base64_note
-            print >> out, ""
+            print(base64_note, file=out)
+            print("", file=out)
         LOG.info(out.getvalue())
         if FIXED_ADDRESS:
             # Send a real email to the given fixed address.
